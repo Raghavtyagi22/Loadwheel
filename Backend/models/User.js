@@ -6,8 +6,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true, minlength: 6 },
   phone: { type: String, required: true },
-  role: { type: String, enum: ['customer', 'driver', 'admin'], default: 'customer' }
+  role: { type: String, enum: ['customer', 'driver', 'admin'], default: 'customer' },
+  googleId: { type: String }
 }, { timestamps: true })
+
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true })
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next()
