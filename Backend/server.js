@@ -19,6 +19,7 @@ app.use('/api/trucks', require('./routes/trucks'))
 app.use('/api/bookings', require('./routes/bookings'))
 app.use('/api/pricing', require('./routes/pricing'))
 app.use('/api/admin', require('./routes/admin'))
+app.use('/api/payment', require('./routes/payment'))
 
 // Socket.IO
 require('./services/socket')(io)

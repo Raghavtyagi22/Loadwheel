@@ -96,10 +96,47 @@ export default function BookTruck() {
     if (!selected) return
     setLoadingBook(true)
     try {
-      const { data } = await api.post('/bookings', { truckId: selected._id, source: form.source, destination: form.destination, goodsType: form.goodsType, weight: form.weight, price: breakdown?.total })
-      navigate(`/tracking/${data.booking._id}`)
+      const { data } = await api.post('/payment/create-order', {
+        source: form.source,
+        destination: form.destination,
+        truckId: selected._id,
+        goodsType: form.goodsType,
+        weight: form.weight
+      })
+
+      const options = {
+        key: data.key,
+        amount: data.order.amount,
+        currency: 'INR',
+        name: 'LoadWheel',
+        description: `${form.source} → ${form.destination}`,
+        order_id: data.order.id,
+        handler: async (response) => {
+          try {
+            const { data: booking } = await api.post('/payment/verify', {
+              ...response,
+              bookingData: {
+                truckId: selected._id,
+                source: form.source,
+                destination: form.destination,
+                goodsType: form.goodsType,
+                weight: form.weight
+              }
+            })
+            navigate(`/tracking/${booking.booking._id}`)
+          } catch {
+            setError('Payment verification failed. Contact support.')
+          }
+        },
+        prefill: { name: '', email: '', contact: '' },
+        theme: { color: '#2563eb' }
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', () => setError('Payment failed. Please try again.'))
+      rzp.open()
     } catch {
-      setError('Booking failed. Please try again.')
+      setError('Could not initiate payment. Please try again.')
     } finally {
       setLoadingBook(false)
     }

@@ -9,7 +9,9 @@ const bookingSchema = new mongoose.Schema({
   weight: { type: Number },
   distance: { type: Number },
   price: { type: Number },
-  status: { type: String, enum: ['Booked', 'In Transit', 'Delivered', 'Cancelled'], default: 'Booked' }
+  status: { type: String, enum: ['Booked', 'In Transit', 'Delivered', 'Cancelled'], default: 'Booked' },
+  paymentId: { type: String },
+  paymentStatus: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' }
 }, { timestamps: true })
 
 module.exports = mongoose.model('Booking', bookingSchema)

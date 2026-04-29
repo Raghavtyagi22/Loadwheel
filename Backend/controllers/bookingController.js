@@ -1,6 +1,8 @@
 const Booking = require('../models/Booking')
 const Truck = require('../models/Truck')
+const User = require('../models/User')
 const { calculatePrice } = require('../services/pricing')
+const { sendStatusUpdate } = require('../services/email')
 
 exports.createBooking = async (req, res) => {
   try {
@@ -84,9 +86,12 @@ exports.updateStatus = async (req, res) => {
       req.params.id,
       { status: req.body.status },
       { new: true }
-    )
+    ).populate('customerId', 'name email')
     if (req.body.status === 'Delivered') {
       await Truck.findByIdAndUpdate(booking.truckId, { availability: true })
+    }
+    if (booking.customerId?.email) {
+      sendStatusUpdate(booking.customerId, booking).catch(() => {})
     }
     res.json({ booking })
   } catch (err) {

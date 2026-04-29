@@ -13,20 +13,26 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password })
+  const _saveSession = (data) => {
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
     return data.user
   }
 
+  const login = async (email, password) => {
+    const { data } = await api.post('/auth/login', { email, password })
+    return _saveSession(data)
+  }
+
   const register = async (formData) => {
     const { data } = await api.post('/auth/register', formData)
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
-    setUser(data.user)
-    return data.user
+    return _saveSession(data)
+  }
+
+  const googleLogin = async (googleData) => {
+    const { data } = await api.post('/auth/google', googleData)
+    return _saveSession(data)
   }
 
   const logout = () => {
@@ -36,7 +42,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, googleLogin, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

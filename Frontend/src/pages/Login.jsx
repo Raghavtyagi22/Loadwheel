@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useGoogleLogin, GoogleLogin } from '@react-oauth/google'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 
@@ -9,8 +10,31 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
-  const { login } = useAuth()
+  const { login, googleLogin } = useAuth()
   const navigate = useNavigate()
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: async (tokenResponse) => {
+      setError('')
+      setLoading(true)
+      try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+        })
+        const profile = await res.json()
+        const user = await googleLogin({ googleId: profile.sub, email: profile.email, name: profile.name })
+        if (user.role === 'admin') navigate('/admin')
+        else if (user.role === 'driver') navigate('/driver')
+        else navigate('/book')
+      } catch (err) {
+        setError(err.response?.data?.message || 'Google login failed')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => setError('Google login failed')
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -107,12 +131,27 @@ export default function Login() {
             <div className="relative flex justify-center"><span className="bg-surface px-3 text-xs text-navy-400">or continue with</span></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {['Google', 'Microsoft'].map((p) => (
-              <button key={p} className="btn btn-secondary btn-md w-full text-navy-600">
-                {p}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                setError('')
+                setLoading(true)
+                try {
+                  const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]))
+                  const user = await googleLogin({ googleId: payload.sub, email: payload.email, name: payload.name })
+                  if (user.role === 'admin') navigate('/admin')
+                  else if (user.role === 'driver') navigate('/driver')
+                  else navigate('/book')
+                } catch (err) {
+                  setError(err.response?.data?.message || 'Google login failed')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              onError={() => setError('Google login failed')}
+              width="100%"
+            />
+            <button className="btn btn-secondary btn-md w-full text-navy-600">Microsoft</button>
           </div>
 
           <p className="text-center text-sm text-navy-600 mt-6">
